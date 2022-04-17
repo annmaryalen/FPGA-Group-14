@@ -12,8 +12,9 @@ module game_regfile (
     output out_a[16], //read port a
     output out_b[16], //read port b 
     
+    output correct_count_out[4], //fixed output to change between levels in CU
+    
     //fixed outputs to CU for display in 7 seg and led
-    output correct_count_out[4],
     output lives_count_out[2],
     output question0_out[5],
     output question1_out[5],
