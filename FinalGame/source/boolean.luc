@@ -1,0 +1,36 @@
+module boolean (
+    input alu_fn[6],
+    input a[16],
+    input b[16],
+    output boole[16]
+  ) {
+always  {
+  boole = b0000000000000000;
+  
+ case (alu_fn) {
+      b010000: boole = 16b0;
+      b010001: boole = a & b; 
+      b010010:  boole = a & ~b; //a>b
+      
+      b010011: boole = a;
+      b010100: boole = ~a & b; //a<b
+      
+      b010101: boole = b;
+      b010110: boole = a ^ b;
+      b010111: boole = a | b;
+      b011000: boole = ~(a | b);
+      b011001: boole = ~(a ^ b);
+      b011010: boole = ~b;
+      b011011: boole = ~(~a & b); //a>=b
+      
+      b011100: boole = ~a;
+      b011101:  boole = ~(a & ~b); //a<=b
+      
+      b011110: boole = ~(a & b);
+      b011111: boole = 16b1;
+      default: boole = b0000000000000000;
+      
+    }
+}
+
+}

@@ -1,0 +1,11 @@
+//all the pins used replace the id of io_dip 
+
+
+pin increase_button A33 pulldown;
+pin decrease_button A34 pulldown;
+
+pin enter_button A17 pulldown;
+pin start_button A18 pulldown;
+
+pin reset_button A36 pulldown;
+pin onoff_button A37 pulldown;

@@ -1,0 +1,61 @@
+module modified_counter(
+    input increase_button,  // connect to io_button
+    input decrease_button,
+    input reset_to_zero,
+    input clk,
+    input rst,
+    output out[5] //can be used to output the 26 letters in 5 bit
+  ) {
+    .clk(clk){
+    
+    button_conditioner increase_cond;
+    edge_detector increase_edge (#RISE(1),#FALL(0));
+    
+    button_conditioner decrease_cond;
+    edge_detector decrease_edge (#RISE(1),#FALL(0));
+    
+      .rst(rst){   
+        dff ctr[5];     
+    }
+  }
+  always {
+    
+    
+    
+    //output is equal to dff 'counter'
+    out = ctr.q;
+    
+    //button_in will be assigned to a button to increment the letter in au_top 
+    increase_cond.in=increase_button;
+    increase_edge.in=increase_cond.out;
+    
+    decrease_cond.in=decrease_button;
+    decrease_edge.in=decrease_cond.out;
+    
+    if (reset_to_zero){
+      ctr.d=0;
+    }
+    
+    if (increase_edge.out){           //up counter
+
+    ctr.d=ctr.q+1;
+      
+    if (ctr.q==26){      //if reach letter 'Z' , goes back to letter 'A'
+      ctr.d=1;
+      }
+     }
+        
+    if (decrease_edge.out) {             //down counter
+      
+      ctr.d=ctr.q-1;
+        
+      if (ctr.q==1){      //if reach letter 'A', goes back to letter 'Z'
+        ctr.d=26;
+        } 
+      }
+            
+    //to always start from 1
+    if (ctr.q==0 ){
+      ctr.d=1;
+    }
+}

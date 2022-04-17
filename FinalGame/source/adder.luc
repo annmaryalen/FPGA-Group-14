@@ -1,0 +1,62 @@
+//This does addition, subtraction, multiplication or division
+//When the LSB of the alufn = 1, the b is negative value.
+
+
+module adder (
+    
+    input a[16],
+    input b[16],
+    input alufn[6],
+    output out[16],
+    output z,
+    output v,
+    output n,
+    output error
+  ) {
+  
+  sig s[16], o;
+  sig c[16];
+  sig i[16];
+  always {
+    s = 16b0;
+    c = 16b0;
+    o = 0;
+    i = 16b0;
+    error=0;
+    
+    case (alufn) {
+      b000000:
+        s = a + b;
+        c = b;
+        o = (a[15] & c[15] & ~s[15]) | (~a[15] & ~c[15] & s[15]);
+      b000001:
+        s = a - b;
+        c = -b;
+        o = (a[15] & c[15] & ~s[15]) | (~a[15] & ~c[15] & s[15]);
+      b000010:
+        s = a * b;
+        o = (a[15] & b[15] & s[15]) | (~(a[15] | b[15]) & s[15]) | ((a[15] ^ b[15]) & ~s[15]);
+      b000011:
+        s = a * (-b);
+        o = (a[15] & b[15] & s[15]) | (~(a[15] | b[15]) & s[15]) | ((a[15] ^ b[15]) & ~s[15]);
+      b000100:
+        s = a / b;
+        if (b==0){
+          error=1;
+        }
+        o = 0;
+      b000101:
+        s = a / (-b);
+        if (b==0){
+          error=1;
+        }
+        o = 0;
+    }
+    
+    
+    out = s;
+    v = o;
+    n = s[15];
+    z = ~|s;
+  }
+}

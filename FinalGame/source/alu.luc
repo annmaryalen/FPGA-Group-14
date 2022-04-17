@@ -1,0 +1,59 @@
+// This is the main 16-Bit ALU module
+
+module alu (
+    input alufn[6],
+    input a[16],
+    input b[16],
+    output out[16],
+    output zout,
+    output vout,
+    output nout,
+    output error
+  ) {
+
+  // Initialise modules
+  
+  adder adderunit;
+  compare compareunit;
+  shifter shifterunit;
+  boolean booleanunit;
+  
+  always {
+    out = 16b0;
+    error=0;
+    
+    adderunit.a = a;
+    adderunit.b = b;
+    adderunit.alufn = alufn;
+    
+    booleanunit.a = a;
+    booleanunit.b = b;
+    booleanunit.alu_fn = alufn;
+    
+    shifterunit.a = a;
+    shifterunit.b = b;
+    shifterunit.alufn = alufn;
+    
+    compareunit.a=a;
+    compareunit.b=b;
+    compareunit.alu_fn = alufn;
+    
+    case(alufn[5:4]){
+      b00:
+        out = adderunit.out;
+        error = adderunit.error;
+      b01:
+        out = booleanunit.boole;
+      b10:
+        out = shifterunit.out;
+      b11:
+        out = compareunit.out;
+  }
+    
+    zout = adderunit.z;
+    vout = adderunit.v;
+    nout = adderunit.n;
+    
+  }
+}
+

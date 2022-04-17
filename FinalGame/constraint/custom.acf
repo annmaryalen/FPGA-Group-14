@@ -1,0 +1,31 @@
+//for debugging purposes
+
+pin custom_sel[0] B48;
+pin custom_sel[1] B49;
+pin custom_sel[2] B3;
+pin custom_sel[3] B2;
+pin custom_sel[4] B45;
+
+pin input_sel[0] B46;
+
+pin custom_seg[0] B42;
+pin custom_seg[1] B43;
+pin custom_seg[2] B9;
+pin custom_seg[3] B8;
+pin custom_seg[4] B39;
+pin custom_seg[5] B40;
+pin custom_seg[6] B12;
+pin custom_seg[7] B11;
+
+pin input_seg [0] B36;
+pin input_seg [1] B37;
+pin input_seg [2] B15;
+pin input_seg [3] B14;
+pin input_seg [4] B33;
+pin input_seg [5] B34;
+pin input_seg [6] B18;
+pin input_seg [7] B17;
+
+pin led_lives[0] B30; // RED
+pin led_lives[1] B31; // YELLOW
+pin led_lives[2] B21; // GREEN

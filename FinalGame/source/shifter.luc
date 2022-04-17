@@ -1,0 +1,28 @@
+module shifter (
+    input a[16],
+    input b[16],
+    input alufn[6],
+    output out[16]
+  ) {
+  
+  always {   //default output is equal to input.
+     out=a;
+    
+          
+    if (alufn == b100000)     
+    { //if alufn=00, left shift.
+    out=a<<b[3:0];
+        }
+        
+          
+    else if (alufn == b100001){    //if alufn=01, right shift.
+      out=a>>b[3:0];
+        }
+        
+    else if (alufn == b100011) {   //if alufn=11, signed right shift.
+      out=$signed(a)>>>b[3:0];    //$signed(a) is to force a to be a signed binary.
+        }
+    } 
+ }
+
+

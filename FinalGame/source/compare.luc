@@ -1,0 +1,33 @@
+// Since the z,v,n values required come from substraction from adder.luc,
+// the alufn of the adder.luc is set to be b000001.
+
+module compare (
+    input a[16],
+    input b[16],
+    input alu_fn[6],
+    output out[16]
+  ) {
+  
+  adder adderunit;
+  sig z,v,n;
+  
+  always {
+  
+    adderunit.a=a;
+    adderunit.b=b;
+    adderunit.alufn=b000001;
+    
+    z=adderunit.z;
+    v=adderunit.v;
+    n=adderunit.n;
+    out = b0000000000000000;
+    case (alu_fn) {
+    
+     b110011: out[0] = z; // a == b
+     b110101: out[0] = n ^ v; // a < b
+     b110111: out[0] = z | (n ^ v); // a <= b
+     default: out = b0000000000000000;
+        }
+    }
+    
+  }
