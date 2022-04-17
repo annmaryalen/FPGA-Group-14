@@ -1,0 +1,117 @@
+module game_regfile (
+    input clk,  // clock
+    input rst,  // reset
+    input we, // write enable
+    input data[16], // data in
+    
+    
+    input ra[4], //address port a 
+    input rb[4], //address port b
+    input rc[4], //address port c
+    
+    output out_a[16], //read port a
+    output out_b[16], //read port b 
+    
+    //fixed outputs to CU for display in 7 seg and led
+    output correct_count_out[4],
+    output lives_count_out[2],
+    output question0_out[5],
+    output question1_out[5],
+    output question2_out[5],
+    output question3_out[5],
+    output question4_out[5],
+    output display_state_out[5],
+    
+    //fixed input and output to turn on/off display
+    input onoff_in[1],
+    output onoff_out[1]
+  ) 
+{
+  .clk(clk){
+    .rst(rst){
+      dff display_state[5](#INIT(5b0)); //to display state of correct letters
+      dff current_input[5](#INIT(5b0)); //to store user's input value
+      dff question0[5]; //question letter 1
+      dff question1[5]; //question letter 2
+      dff question2[5]; //question letter 3
+      dff question3[5]; //question letter 4
+      dff question4[5]; //question letter 5
+      dff lives[2](#INIT(b11)); //set to 3 lives
+      dff out[1](#INIT(b0)); //if wrong =0 , if correct =1
+      dff off[1](#INIT(b0)); //to turn off display
+      dff rng_value[4]; //for question.rng input
+      dff correct_count[4](#INIT(b0)); //to count no of correct qns answered (to switch between levels)
+      dff ctr[5];
+    }
+  }
+    always {
+    
+    //write port
+    if (we){
+      case(rc){
+        b0000 : question0.d = data;
+        b0001 : question1.d = data;
+        b0010 : question2.d = data;
+        b0011 : question3.d = data;
+        b0100 : question4.d = data;
+        b0101 : current_input.d = data;
+        b0110 : ctr.d = data;
+        b0111 : out.d = data;
+        b1000 : correct_count.d = data;
+        b1001 : display_state.d = data;
+        b1010 : rng_value.d = data;
+        b1011 : lives.d = data;
+      } 
+    }
+    //read port a
+    case(ra){
+        b0000 : out_a = question0.q;
+        b0001 : out_a = question1.q;
+        b0010 : out_a = question2.q;
+        b0011 : out_a = question3.q;
+        b0100 : out_a = question4.q;
+        b0101 : out_a = current_input.q;
+        b0110 : out_a = ctr.q;
+        b0111 : out_a = out.q;
+        b1000 : out_a = correct_count.q;
+        b1001 : out_a = display_state.q;
+        b1010 : out_a = rng_value.q;
+        b1011 : out_a = lives.q;
+        default : out_a = 0;
+    }
+    
+    //read port b
+    case(rb){
+        b0000 : out_b = question0.q;
+        b0001 : out_b = question1.q;
+        b0010 : out_b = question2.q;
+        b0011 : out_b = question3.q;
+        b0100 : out_b = question4.q;
+        b0101 : out_b = current_input.q;
+        b0110 : out_b = ctr.q;
+        b0111 : out_b = out.q;
+        b1000 : out_b = correct_count.q;
+        b1001 : out_b = display_state.q;
+        b1010 : out_b = rng_value.q;
+        b1011 : out_b = lives.q;
+        default : out_b = 0;
+    }
+     
+    //fixed output for 7 seg display and led lives indicator
+    lives_count_out=lives.q;
+    question0_out=question0.q;
+    question1_out=question1.q;
+    question2_out=question2.q;
+    question3_out=question3.q;
+    question4_out=question4.q;
+    display_state_out=display_state.q;
+    
+    //fixed output to change level in CU
+    correct_count_out=correct_count.q;
+    
+    //fixed output for the onoff switch  
+    off.d=onoff_in;
+    onoff_out=off.q;
+    }
+   
+}

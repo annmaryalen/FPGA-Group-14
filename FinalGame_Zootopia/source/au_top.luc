@@ -1,0 +1,57 @@
+module au_top (
+    input clk,              // 100MHz clock
+    input rst_n,            // reset button (active low)
+    input usb_rx,           // USB->Serial input
+    output usb_tx,          // USB->Serial output
+    
+    //all of the customised pins are stated below
+    output custom_seg [8],
+    output custom_sel [5],
+    output input_sel [1],
+    output input_seg [8],
+    output led_lives[3],
+    
+    input increase_button[1],
+    input decrease_button[1],
+    input start_button[1],
+    input enter_button[1],
+    input reset_button[1],
+    input onoff_button[1]
+  ) {
+  
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    
+    .rst(rst){
+         game_minibeta game;
+          }
+    reset_conditioner reset_cond;
+  }
+  
+  always {
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+    
+    usb_tx = usb_rx;        // loop serial port
+    
+    //button initialisation 
+    game.start_switch=start_button;
+    game.enter_switch=enter_button;
+    game.reset_switch=reset_button;
+    game.onoff_switch=onoff_button;
+    
+    //game input
+    game.increase_button=increase_button;
+    game.decrease_button=decrease_button;
+    
+    //game output
+    custom_seg=game.custom_seg;
+    custom_sel=game.custom_sel;
+    input_sel=game.input_sel;
+    input_seg=game.input_seg;
+    led_lives=game.led_lives;
+    
+}

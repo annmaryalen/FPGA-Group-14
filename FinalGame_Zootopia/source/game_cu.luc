@@ -1,0 +1,618 @@
+module game_cu (
+    input clk,  // clock
+    input rst,  // reset
+    
+    input correct_count[4], //fixed input from regfile to change between levels
+    input out_a[16],
+    input alu_output[16],
+    
+    //For regfile and alu
+    output we[1],       //write enable
+    output rc[4],       //address port c
+    output rb[4],       //address port b
+    output ra[4],       //address port a
+    output bsel[1],     //selector for bsel mux
+    output constant[16], 
+    output alufn[6], 
+    
+    //For display
+    output seven_seg_values[5][5],
+    output seven_seg_input[5],
+    output custom_sel[5],
+    output input_sel[1],
+    
+    //Button inputs
+    input increase_button[1],
+    input decrease_button[1],
+    input start_switch[1],
+    input enter_switch[1],
+    input reset_switch[1],
+    
+    //Fixed input from regfile for display
+    input question0_in[5],
+    input question1_in[5],
+    input question2_in[5],
+    input question3_in[5],
+    input question4_in[5],
+    input display_state_in[5]
+    
+    
+  ) {
+  //connector for displays of correct answer chosen
+  sig display0[5];
+  sig display1[5];
+  sig display2[5];
+  sig display3[5];
+  sig display4[5];
+  .clk(clk){
+      edge_detector normal_edge(#RISE(1),#FALL(0));  //edge_detector for normal clock
+      edge_detector rng_edge (#RISE(1),#FALL(0));
+    
+      .rst(rst){
+            //rng
+            pn_gen rng;      
+            counter rng_clock(#SIZE(1),#DIV(2)); 
+        
+            modified_counter ctr; //counter to increment between alphabets
+            counter normal_clock(#SIZE(1),#DIV(27)); //clock to delay the "WIN","LOSE","lEVEL2","LEVEL3" display
+            
+            fsm state={IDLE,    //RESET CORRECT COUNT
+            RESET_LIVES,        //RESET LIVES
+            RESET_DISPLAY,      //RESET DISPLAY STATE
+            START,              //SET RNG AND TRANSITION BETWEEN EACH LEVELS
+            INSERT,             //STATE IN WHICH USER INPUTS HIS/HER ANSWER
+            RESET_OUT,          //RESET OUT.d to 0 (out=1 means correct, out=0 means wrong) 
+            INIT_SET_QNS1,SET_QNS10,SET_QNS11,SET_QNS12,SET_QNS13,SET_QNS14, //SET QUESTION FOR difficulty1
+            INIT_SET_QNS2,SET_QNS20,SET_QNS21,SET_QNS22,SET_QNS23,SET_QNS24, //SET QUESTION FOR difficulty2
+            INIT_SET_QNS3,SET_QNS30,SET_QNS31,SET_QNS32,SET_QNS33,SET_QNS34, //SET QUESTION FOR difficulty3
+            CHECK0,CHECK1,CHECK2,CHECK3,CHECK4, //TO CHECK ANSWER
+            COMBINE0,COMBINE1,COMBINE2,COMBINE3,COMBINE4, //TO CREATE NEW DISPLAY BASED ON CORRECT INPUT
+            SET_OUT0,SET_OUT1,SET_OUT2,SET_OUT3,SET_OUT4, //TO MAKE SIGNAL OUT=1 IF INPUT IS CORRECT
+            CHECK, //TRANSITION BETWEEN SUBTRACT LIVES (IF WRONG) OR GET_DISPLAY_STATE (IF CORRECT) 
+            TEMP_WIN, //FOR WHEN THE QUESTION IS ODD NUMBER (IN BETWEEN LEVELS)
+            LEVEL2,LEVEL3,WIN,LOSE, //DISPLAYS LEVEL2,LEVEL3,WIN,LOSE ON THE 7 SEG
+            GET_DISPLAY_STATE, //IF ALL LETTERS GUESSED CORRECTLY : GO TO ADD_CORRECT_COUNT , ELSE : GO TO INSERT
+            ADD_CORRECT_COUNT, //ADD CORRECT COUNT, GO TO GET_CORRECT_COUNT
+            GET_CORRECT_COUNT, //TRANSITION BETWEEN LEVELS BASED ON CORRECT COUNT
+            SUBTRACT_LIVES, //DECREASE LIVES IF WRONG
+            GET_LIVES}; //IF LIVES == 0 : LOSE, ELSE : GO INSERT
+        
+            dff rng_num[4]; //for question.rng input
+      }
+  }
+  
+    difficulty1 difficulty1;
+    difficulty2 difficulty2;
+    difficulty3 difficulty3;
+  
+  always {
+    //initialisation
+    normal_edge.in=normal_clock.value;
+    ctr.increase_button=increase_button;
+    ctr.decrease_button=decrease_button;
+    ctr.reset_to_zero=0;
+    
+    //standard setting unless otherwise overwritten by each case 
+    we=0;
+    rc=0;
+    rb=0;
+    ra=0;
+    bsel=0;
+    constant=0;
+    alufn=b010101; //always get b value unless otherwise overwritten by each case
+    
+    //display initialisation
+    seven_seg_values=5x{{5b0}};
+    seven_seg_input=ctr.out; 
+    custom_sel=0;
+    input_sel=0;   
+    
+    //rng initialisation
+    //to generate random number to randomize question
+    rng.seed=c{8b1,8b0,8b0,8b1}; //can be any 32 bit value
+    rng_edge.in=rng_clock.value; 
+    rng.next=rng_edge.out;
+    
+    difficulty1.rng=rng_num.q;
+    difficulty2.rng=rng_num.q;
+    difficulty3.rng=rng_num.q;
+    
+    //to always display correct letter chosen
+    display0=0;
+    display1=0;
+    display2=0;
+    display3=0;
+    display4=0;
+    if (display_state_in[0]){display0=question0_in;}
+    if (display_state_in[1]){display1=question1_in;}
+    if (display_state_in[2]){display2=question2_in;}
+    if (display_state_in[3]){display3=question3_in;}
+    if (display_state_in[4]){display4=question4_in;} 
+    
+    seven_seg_values={display0,display1,display2,display3,display4};
+    
+    //if reset switch button is pressed, the user's input is resetted
+    if (reset_switch){
+      state.d=state.IDLE;
+    }
+    
+    case(state.q){
+        
+        default:
+          state.d=state.IDLE;
+        
+        //idle state that reset correct count.
+        state.IDLE: 
+            //correct_count.d=0
+            we=1;
+            rc=4b1000;
+            bsel=1;
+            constant=b0;
+            alufn=b010101;
+          
+            ctr.reset_to_zero=1; 
+        
+            state.d=state.RESET_LIVES;
+        
+        //reset no of lives
+        state.RESET_LIVES:
+            //lives.d = 3
+            we=1;
+            rc=b1011;
+            bsel=1;
+            constant=b11;
+            alufn=b010101;
+            state.d=state.RESET_DISPLAY;
+        
+        //reset display state
+        state.RESET_DISPLAY:
+            //display_state.d=5b0;
+            we=1;
+            rc=4b1001;
+            bsel=1;
+            constant=0;
+            alufn=b010101;
+            state.d=state.START;
+        
+        
+        state.START: 
+            //rng_num.d=rng.num
+            seven_seg_values={5d19,5d20,5d1,5d18,5d20}; //START
+            we=1;
+            rc=4b1010;
+            bsel=1;
+            constant=rng.num;
+            alufn=b010101;        
+            rng_num.d=rng.num;
+        
+            if ( correct_count > d0 ){
+              if ( correct_count < d2){state.d=state.INIT_SET_QNS1;}
+              else if ( correct_count < d4){state.d=state.INIT_SET_QNS2;}
+              else if ( correct_count < d6){state.d=state.INIT_SET_QNS3;}
+            }
+        
+          if (start_switch){
+            state.d=state.INIT_SET_QNS1;
+            }
+        
+        state.INIT_SET_QNS1:
+          //difficulty1.rng = rng_value.q
+          difficulty1.rng=rng_num.q;
+          state.d=state.SET_QNS10;
+          
+        state.SET_QNS10:
+          //question0.d = difficulty1.question0;
+          we=1;
+          bsel=1;
+          constant=difficulty1.question0;
+          rc=4b0000;
+          state.d=state.SET_QNS11;
+            
+        state.SET_QNS11:
+          //question1.d=difficulty1.question1;
+          we=1;
+          bsel=1;
+          constant=difficulty1.question1;
+          rc=4b0001;
+          state.d=state.SET_QNS12;
+            
+        state.SET_QNS12:
+          //question2.d=difficulty1.question2;
+          we=1;
+          bsel=1;
+          constant=difficulty1.question2;
+          rc=4b0010;
+          state.d=state.SET_QNS13;
+            
+        state.SET_QNS13:
+          //question3.d=difficulty1.question3;
+          we=1;
+          bsel=1;
+          constant=difficulty1.question3;
+          rc=4b0011;
+          state.d=state.SET_QNS14;
+            
+        state.SET_QNS14:
+          //question4.d=difficulty1.question4;
+          we=1;
+          bsel=1;
+          constant=difficulty1.question4;
+          rc=4b0100;
+          state.d=state.INSERT;
+            
+        state.INIT_SET_QNS2:
+          //difficulty2.rng = rng_value.q
+          difficulty2.rng=rng_num.q;
+          state.d=state.SET_QNS20;
+          
+        state.SET_QNS20:
+          //question0.d = difficulty2.question0;
+          we=1;
+          bsel=1;
+          constant=difficulty2.question0;
+          rc=4b0000;
+          state.d=state.SET_QNS21;
+            
+        state.SET_QNS21:
+          //question1.d=difficulty2.question1;
+          we=1;
+          bsel=1;
+          constant=difficulty2.question1;
+          rc=4b0001;
+          state.d=state.SET_QNS22;
+            
+        state.SET_QNS22:
+          //question2.d=difficulty2.question2;
+          we=1;
+          bsel=1;
+          constant=difficulty2.question2;
+          rc=4b0010;
+          state.d=state.SET_QNS23;
+            
+        state.SET_QNS23:
+          //question3.d=difficulty2.question3;
+          we=1;
+          bsel=1;
+          constant=difficulty2.question3;
+          rc=4b0011;
+          state.d=state.SET_QNS24;
+            
+        state.SET_QNS24:
+          //question4.d=difficulty2.question4;
+          we=1;
+          bsel=1;
+          constant=difficulty2.question4;
+          rc=4b0100;
+          state.d=state.INSERT;
+        
+        state.INIT_SET_QNS3:
+          //difficulty3.rng = rng_value.q
+          difficulty3.rng=rng_num.q;
+          state.d=state.SET_QNS30;
+        
+        state.SET_QNS30:
+          //question0.d = difficulty3.question0;
+          we=1;
+          bsel=1;
+          constant=difficulty3.question0;
+          rc=4b0000;
+          state.d=state.SET_QNS31;
+            
+        state.SET_QNS31:
+          //question1.d=difficulty3.question1;
+          we=1;
+          bsel=1;
+          constant=difficulty3.question1;
+          rc=4b0001;
+          state.d=state.SET_QNS32;
+            
+        state.SET_QNS32:
+          //question2.d=difficulty3.question2;
+          we=1;
+          bsel=1;
+          constant=difficulty3.question2;
+          rc=4b0010;
+          state.d=state.SET_QNS33;
+            
+        state.SET_QNS33:
+          //question3.d=difficulty3.question3;
+          we=1;
+          bsel=1;
+          constant=difficulty3.question3;
+          rc=4b0011;
+          state.d=state.SET_QNS34;
+            
+        state.SET_QNS34:
+          //question4.d=difficulty3.question4;
+          we=1;
+          bsel=1;
+          constant=difficulty3.question4;
+          rc=4b0100;
+          state.d=state.INSERT;
+        
+        
+        //store user's input in current_input dff.
+        state.INSERT: 
+          //current_input.d=ctr.out;
+          we=1;
+          bsel=1;
+          constant=ctr.out;
+          rc=4b0101; 
+          if (enter_switch){
+            state.d=state.RESET_OUT;
+          }
+        
+        state.RESET_OUT:
+          //out.d=0
+          we=1;
+          bsel=1;
+          constant=0;
+          rc=4b0111;
+          state.d=state.CHECK0;
+            
+        //check whether the answer is valid
+        state.CHECK0:
+          ra=4b0101;
+          rb=4b0000;
+          alufn=b110011;    //CMPEQ
+          if (alu_output){
+            state.d=state.COMBINE0;
+            }
+          else{
+            state.d=state.CHECK1;
+            }
+          
+        state.CHECK1:       
+          ra=4b0101;
+          rb=4b0001;
+          alufn=b110011;    //CMPEQ
+          if (alu_output){
+            state.d=state.COMBINE1;
+            }
+          else{
+            state.d=state.CHECK2;
+            } 
+          
+        state.CHECK2:
+          ra=4b0101;
+          rb=4b0010;
+          alufn=b110011;    //CMPEQ
+          if (alu_output){
+            state.d=state.COMBINE2;
+            }
+          else{
+            state.d=state.CHECK3;
+            } 
+          
+        state.CHECK3:
+          ra=4b0101;
+          rb=4b0011;
+          alufn=b110011;    //CMPEQ
+          if (alu_output){
+            state.d=state.COMBINE3;
+            }
+          else{
+            state.d=state.CHECK4;
+            }
+           
+        state.CHECK4:
+          ra=4b0101;
+          rb=4b0100;
+          alufn=b110011;    //CMPEQ
+          if (alu_output){
+            state.d=state.COMBINE4;
+            }
+          else{
+            state.d=state.CHECK;
+            }
+         
+        state.COMBINE0:
+          //display_state.d=alu_output;
+          ra=4b1001;
+          constant=5b00001;
+          we=1;
+          bsel=1;
+          alufn=b010111;   //OR
+          rc=4b1001;
+          state.d=state.SET_OUT0;
+        
+        state.SET_OUT0:
+          //out.d=1;
+          we=1;
+          bsel=1;
+          rc=4b0111;
+          constant=1;
+          state.d=state.CHECK1;
+          
+        state.COMBINE1:
+          //display_state.d=alu_output;
+          ra=4b1001;
+          constant=5b00010;
+          we=1;
+          bsel=1;
+          alufn=b010111;   //OR
+          rc=4b1001;
+          
+          state.d=state.SET_OUT1;
+        
+        state.SET_OUT1:
+          //out.d=1;
+          we=1;
+          bsel=1;
+          rc=4b0111;
+          constant=1;
+          state.d=state.CHECK2;
+          
+        state.COMBINE2:
+          //display_state.d=alu_output;
+          ra=4b1001;
+          constant=5b00100;
+          we=1;
+          bsel=1;
+          alufn=b010111;   //OR
+          rc=4b1001;
+          state.d=state.SET_OUT2;
+        
+        state.SET_OUT2:
+          //out.d=1;
+          we=1;
+          bsel=1;
+          rc=4b0111;
+          constant=1;
+          state.d=state.CHECK3;
+        
+        state.COMBINE3:
+          //display_state.d=alu_output;
+          ra=4b1001;
+          constant=5b01000;
+          we=1;
+          bsel=1;
+          alufn=b010111;   //OR
+          rc=4b1001;
+          state.d=state.SET_OUT3;
+        
+        state.SET_OUT3:
+          //out.d=1;
+          we=1;
+          bsel=1;
+          rc=4b0111;
+          constant=1;
+          state.d=state.CHECK4;
+          
+        state.COMBINE4:
+          //display_state.d=alu_output;
+          ra=4b1001;
+          constant=5b10000;
+          we=1;
+          bsel=1;
+          alufn=b010111;   //OR
+          rc=4b1001;
+          state.d=state.SET_OUT4;
+        
+        state.SET_OUT4:
+          //out.d=1;
+          we=1;
+          bsel=1;
+          rc=4b0111;
+          constant=1;
+          state.d=state.CHECK;
+          
+        //If wrong, subtract lives. If correct, get display state to check if question is completed
+        state.CHECK:
+          //alu_output=out.q
+          rb=4b0111;
+          if (alu_output){
+            state.d=state.GET_DISPLAY_STATE;
+            }
+          
+          else{
+            state.d=state.SUBTRACT_LIVES;
+          }
+          
+          
+        //happens when the question attempted is odd number (in between levels)
+        state.TEMP_WIN:
+          seven_seg_values={5d18,5d9,5d7,5d8,5d20}; //RIGHT
+          //lives.d=2b11;
+          constant=2b11;
+          we=1;
+          bsel=1;
+          rc=4b1011;
+          if (normal_edge.out){
+            state.d=state.RESET_LIVES;
+            }
+        
+        //displays level 2    
+        state.LEVEL2:
+          seven_seg_values={5d12,5d5,5d22,5d5,5d12}; //LEVEL 2
+          seven_seg_input=d26; //2
+          if (normal_edge.out){
+            state.d=state.RESET_LIVES;
+            }
+        
+        //displays level 3  
+        state.LEVEL3:
+          seven_seg_values={5d12,5d5,5d22,5d5,5d12}; //LEVEL 3
+          seven_seg_input=d27; // 3
+          if (normal_edge.out){
+            state.d=state.RESET_LIVES;
+            }
+            
+        //Player wins and goes back to IDLE state
+        state.WIN:
+          seven_seg_values={5d0,5d0,5d23,5d9,5d14}; //WIN
+          seven_seg_input=0; // OFF
+          if (start_switch){
+            state.d=state.IDLE;
+          }
+          
+        //Player loses and goes back to IDLE state
+        state.LOSE:
+          seven_seg_values={5b0,5d12,5d15,5d19,5d5}; //LOSE
+          seven_seg_input=0; // OFF
+          if (start_switch){
+            state.d=state.IDLE;
+          }
+        
+        //If all letters are guessed correctly: go to ADD_CORRECT_COUNT. Else: go back to INSERT state.    
+        state.GET_DISPLAY_STATE:
+            //alu_output=display_state.q
+            rb=4b1001;
+            if (alu_output==5b11111){
+              state.d=state.ADD_CORRECT_COUNT;
+            }
+            else{
+              state.d=state.INSERT;
+            }
+        
+        //Add correct count to track which level the players are in.  
+        state.ADD_CORRECT_COUNT:
+            //correct_count.d=correct_count.q+1;
+            alufn = 6b000000; //ADD
+            bsel=1;
+            constant=1;
+            we=1;
+            ra=4b1000;
+            rc=4b1000;
+            state.d=state.GET_CORRECT_COUNT;
+        
+        //To move between levels depending on no of correct count.  
+        state.GET_CORRECT_COUNT:
+            //alu_output=correct_count.q
+            rb=4b1000;
+            if (alu_output==6){
+              state.d=state.WIN;
+            }
+            else if (alu_output==4){
+              state.d=state.LEVEL3;
+            }
+            else if (alu_output==2){
+              state.d=state.LEVEL2;
+            }
+            else{
+              state.d=state.TEMP_WIN;
+          }
+        
+        //Decrease live by 1 because the player guessed wrong letter.  
+        state.SUBTRACT_LIVES:
+            //lives.d=lives.q-1;
+            bsel=1;
+            ra=4b1011;
+            constant=1;
+            alufn=b000001;  //Subtraction
+            we=1;
+            rc=4b1011;
+            state.d=state.GET_LIVES;
+          
+        //If lives == 0 : lose. Else: go to INSERT state.  
+        state.GET_LIVES:
+            //alu_output=lives.q
+            rb=4b1011;
+            if (alu_output==2b00){  
+              state.d=state.LOSE;
+            }
+            else{
+              state.d=state.INSERT;
+            }
+    }
+}

@@ -1,0 +1,124 @@
+module game_minibeta (
+    input clk,  // clock
+    input rst,  // reset
+    
+    output custom_seg [8],
+    output custom_sel [5],
+    output input_sel [1],
+    output input_seg [8],
+    output led_lives[3],
+    
+    input increase_button[1],
+    input decrease_button[1],
+    
+    input start_switch[1],
+    input enter_switch[1],
+    input reset_switch[1],
+    input onoff_switch[1]
+  ) 
+
+{
+  sig onoff;
+  sig alu_input_b[16];
+  .clk(clk){
+        button_conditioner enter_btn;
+        button_conditioner start_btn;
+        button_conditioner reset_btn;
+        button_conditioner onoff_btn;
+        
+        edge_detector enter_edge (#RISE(1),#FALL(0));
+        edge_detector start_edge (#RISE(1),#FALL(0));
+        edge_detector reset_edge (#RISE(1),#FALL(0));
+        edge_detector onoff_edge (#RISE(1),#FALL(1));
+    
+      .rst(rst){
+          game_cu game_cu;
+          game_regfile game_regfile;
+          multi_seven_seg multi_seg;
+      }
+  }
+  seven_seg seg;
+  alu alu;
+  always {
+  
+    //button initialisation 
+    start_btn.in=start_switch;
+    start_edge.in=start_btn.out;
+    game_cu.start_switch=start_edge.out; 
+    
+    enter_btn.in=enter_switch;
+    enter_edge.in=enter_btn.out;
+    game_cu.enter_switch=enter_edge.out; 
+    
+    reset_btn.in=reset_switch;
+    reset_edge.in=reset_btn.out;
+    game_cu.reset_switch=reset_edge.out;
+    
+    onoff_btn.in=onoff_switch;
+    onoff_edge.in=onoff_btn.out;
+    onoff=onoff_edge.out;
+    
+    //game_cu button input
+    game_cu.increase_button=increase_button;
+    game_cu.decrease_button=decrease_button;
+    
+    //bsel mux
+    case(game_cu.bsel){
+      1b0:alu_input_b=game_regfile.out_b;
+      1b1:alu_input_b=game_cu.constant;
+      default:alu_input_b=game_regfile.out_b;
+    }
+    
+    //alu 
+    alu.a=game_regfile.out_a;
+    alu.b=alu_input_b;
+    alu.alufn=game_cu.alufn;
+    
+    //game_cu input connection for game logic
+    game_cu.alu_output=alu.out;
+    game_cu.correct_count=game_regfile.correct_count_out;
+    game_cu.out_a=game_regfile.out_a;
+    
+    //game_cu input connection for display
+    game_cu.display_state_in=game_regfile.display_state_out;
+    game_cu.question0_in=game_regfile.question0_out;
+    game_cu.question1_in=game_regfile.question1_out;
+    game_cu.question2_in=game_regfile.question2_out;
+    game_cu.question3_in=game_regfile.question3_out;
+    game_cu.question4_in=game_regfile.question4_out;
+    
+    //game_regfile input connection
+    game_regfile.ra=game_cu.ra;
+    game_regfile.rb=game_cu.rb;
+    game_regfile.rc=game_cu.rc;
+    game_regfile.we=game_cu.we;
+    game_regfile.data=alu.out;
+    
+    //lives display
+    led_lives=b000;
+    if (game_regfile.lives_count_out==b10){led_lives=b001;}
+    if (game_regfile.lives_count_out==b01){led_lives=b011;}
+    if (game_regfile.lives_count_out==b00){led_lives=b111;}
+    
+    //multi_seven_seg and seven_seg initialisation
+    multi_seg.values=game_cu.seven_seg_values;
+    seg.char=game_cu.seven_seg_input;
+    
+    //game display output
+    custom_seg=multi_seg.seg;
+    custom_sel=~multi_seg.sel;
+    input_sel=game_cu.input_sel;
+    input_seg=seg.segs;
+    
+    //off display and goes to IDLE state if onoff switch is pressed
+    game_regfile.onoff_in=onoff_switch;
+    if(!game_regfile.onoff_out){
+      led_lives=b111;
+      input_sel=5b1;
+      custom_sel=5b11111;
+      game_cu.reset_switch=1;
+    } 
+     
+    
+  }
+}

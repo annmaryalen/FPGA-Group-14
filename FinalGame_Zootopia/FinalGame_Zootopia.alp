@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="FinalGame_Zootopia" board="Alchitry Au" language="Lucid" version="3">
+  <files>
+    <src>shifter.luc</src>
+    <src>difficulty2.luc</src>
+    <src>game_minibeta.luc</src>
+    <component>pipeline.luc</component>
+    <src>compare.luc</src>
+    <src>modified_counter.luc</src>
+    <component>counter.luc</component>
+    <component>decoder.luc</component>
+    <src>multi_seven_seg.luc</src>
+    <component>pn_gen.luc</component>
+    <src>difficulty3.luc</src>
+    <src>difficulty1.luc</src>
+    <src>game_regfile.luc</src>
+    <src>adder.luc</src>
+    <src>alu.luc</src>
+    <component>reset_conditioner.luc</component>
+    <component>edge_detector.luc</component>
+    <src>seven_seg.luc</src>
+    <src top="true">au_top.luc</src>
+    <src>game_cu.luc</src>
+    <component>encoder.luc</component>
+    <component>button_conditioner.luc</component>
+    <src>boolean.luc</src>
+    <constraint>custom.acf</constraint>
+    <constraint>custom.xdc</constraint>
+    <constraint>original.acf</constraint>
+    <constraint>buttons.acf</constraint>
+  </files>
+</project>
