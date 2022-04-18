@@ -114,7 +114,7 @@ module game_minibeta (
     game_regfile.onoff_in=onoff_switch;
     if(!game_regfile.onoff_out){
       led_lives=b111;
-      input_sel=5b1;
+      input_sel=1b1;
       custom_sel=5b11111;
       game_cu.reset_switch=1;
     } 

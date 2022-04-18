@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<webTalkData  fileName='usage_statistics_webtalk.xml'  majorVersion='1' minorVersion='0' timeStamp='Mon Apr 18 04:55:32 2022'>
+<webTalkData  fileName='usage_statistics_webtalk.xml'  majorVersion='1' minorVersion='0' timeStamp='Mon Apr 18 06:17:23 2022'>
 <section name="__ROOT__" level="0" order="1" description="">
  <section name="software_version_and_target_device" level="1" order="1" description="">
   <keyValuePair key="beta" value="FALSE" description="" />
   <keyValuePair key="build_version" value="3064766" description="" />
-  <keyValuePair key="date_generated" value="Mon Apr 18 04:55:31 2022" description="" />
+  <keyValuePair key="date_generated" value="Mon Apr 18 06:17:23 2022" description="" />
   <keyValuePair key="os_platform" value="WIN64" description="" />
   <keyValuePair key="product_version" value="Vivado v2020.2 (64-bit)" description="" />
-  <keyValuePair key="project_id" value="c50096de741c43e6aeff2cb631df1184" description="" />
+  <keyValuePair key="project_id" value="d037f001dc29472f89e3ddaf6ec7e88b" description="" />
   <keyValuePair key="project_iteration" value="1" description="" />
   <keyValuePair key="random_id" value="f24276086e405da9855dd0a6ccefe4fb" description="" />
   <keyValuePair key="registration_id" value="f24276086e405da9855dd0a6ccefe4fb" description="" />
@@ -174,7 +174,7 @@
    <keyValuePair key="output_load" value="5.000000" description="" />
    <keyValuePair key="output_toggle" value="12.500000" description="" />
    <keyValuePair key="package" value="ftg256" description="" />
-   <keyValuePair key="pct_clock_constrained" value="2.000000" description="" />
+   <keyValuePair key="pct_clock_constrained" value="1.000000" description="" />
    <keyValuePair key="pct_inputs_defined" value="11" description="" />
    <keyValuePair key="platform" value="nt64" description="" />
    <keyValuePair key="process" value="typical" description="" />
@@ -522,10 +522,10 @@
    <keyValuePair key="-verilog_define" value="default::[not_specified]" description="" />
   </section>
   <section name="usage" level="2" order="2" description="">
-   <keyValuePair key="elapsed" value="00:01:19s" description="" />
+   <keyValuePair key="elapsed" value="00:01:59s" description="" />
    <keyValuePair key="hls_ip" value="0" description="" />
-   <keyValuePair key="memory_gain" value="78.145MB" description="" />
-   <keyValuePair key="memory_peak" value="1077.543MB" description="" />
+   <keyValuePair key="memory_gain" value="74.816MB" description="" />
+   <keyValuePair key="memory_peak" value="1075.156MB" description="" />
   </section>
  </section>
  <section name="unisim_transformation" level="1" order="9" description="">

@@ -2,8 +2,8 @@
 # Vivado v2020.2 (64-bit)
 # SW Build 3064766 on Wed Nov 18 09:12:45 MST 2020
 # IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
-# Start of session at: Mon Apr 18 04:50:20 2022
-# Process ID: 11380
+# Start of session at: Mon Apr 18 06:11:11 2022
+# Process ID: 10456
 # Current directory: C:/Users/Nicholas/Desktop/FPGA Group 14/FinalGame_Zootopia/work/vivado/FinalGame_Zootopia/FinalGame_Zootopia.runs/synth_1
 # Command line: vivado.exe -log au_top_0.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source au_top_0.tcl
 # Log file: C:/Users/Nicholas/Desktop/FPGA Group 14/FinalGame_Zootopia/work/vivado/FinalGame_Zootopia/FinalGame_Zootopia.runs/synth_1/au_top_0.vds
